@@ -3,8 +3,6 @@
 # Cupcade graphical game launcher
 # Stephen Lesnick
 
-# On cupcade this file should be run as root
-
 import pygame, sys, ConfigParser, os
 from pygame import gfxdraw
 from pygame import joystick
