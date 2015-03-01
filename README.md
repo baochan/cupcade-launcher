@@ -1,7 +1,7 @@
 # cupcade-launcher
 A full-screen graphical menu for Adafruit Cupcade arcade machine using Pygame
 
-A full-screen picture is displayed for each game in the system, allowing the user to scroll left and right through them in alphabetical order. Pressing Select will toggle mute, and Start will display an "About" image. After receiving no input for a defined time-out (60 seconds by default) the screensaver function will cycle to a random game every 10 seconds as a kind of "eyecatch" mode.
+A full-screen picture is displayed for each game in the system much like a slideshow, allowing the user to scroll left and right through them in alphabetical order. Pressing Select will toggle mute, and Start will display an "About" image. After receiving no input for a defined time-out (60 seconds by default) the screensaver function will cycle to a random game every 10 seconds as a kind of "eyecatch" mode.
 
 # Setup Instructions
 This should be compatible with the Adafruit Cupcade iso from 05/2014 without needing to install any additional packages. 
