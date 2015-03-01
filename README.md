@@ -20,5 +20,4 @@ Copy `launcher.py` to `/home/pi` and make it executable.
 
 Then add a line at the end of pi's `~/.bashrc` to auto-launch `launcher.py`. The following will launch only on tty1 (freeing tty3 and ssh for bug fixing) and shutdown when the user presses Esc:
 
-    [[ $(fgconsole 2>/dev/null) -eq "1" ]] && /home/pi/launcher.py
-    sudo shutdown -h now
+    [[ $(fgconsole 2>/dev/null) -eq "1" ]] && /home/pi/launcher.py && sudo shutdown -h now
