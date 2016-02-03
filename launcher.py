@@ -21,8 +21,10 @@ SCROLLRATE = 40
 REPEAT_DELAY = 500
 # Rate of rapid scrolling after that, in ms per game
 REPEAT_RATE = 75
+# Number of title to fast-scroll before instant-scroll kicks in
+INSTANT_SCROLL_DELAY = 20
 
-# Time until screensaver, in seconds 
+# Time until screensaver, in seconds
 # Initial delay=after no input from user, will start randomly cycling games
 # After delay=after started randomly cycling, will choose a new random game
 SCREENSAVER_INITIAL_DELAY=60
@@ -82,8 +84,8 @@ class Game(pygame.sprite.Sprite):
 		self.rect.centerx = centerx
 	def reset_centerx(self, screen):
 		self.rect.centerx = screen.get_width() / 2
-		
-	
+
+
 def main():
 	global screen, gameList, gameIndex, gameCount
 	# Initialize
@@ -91,49 +93,49 @@ def main():
 	os.putenv('SDL_FBDEV', '/dev/fb1')
 	os.putenv('FRAMEBUFFER', '/dev/fb1')
 	pygame.init()
-	
+
 	# initialize joysticks
-	
+
 	#joy = list()
 	#for i in range (pygame.joystick.get_count()):
 	#	joy.append(pygame.joystick.Joystick(i))
 	#	joy[i].init()
-	
+
 	#AXIS = 0  # x axis
 	#pygame.joystick.init()
 	#joy = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 	#for joystick in joy:
 	#	joystick.init()
-	
+
 	initialize_pygame_display()
-	
+
 	centerX = screen.get_width() / 2
 	centerY = screen.get_height() / 2
-	
+
 	show_splash()
-	
+
 	find_roms()
 	gameIndex = random.randrange(0, gameCount)
-	
+
 	# Set a recurring event every 1 second
 	# once this occurs SCREENSAVER_INITIAL_DELAY times without user input,
-	# will automatically scroll to random game every SCREENSAVER_AFTER_DELAY seconds. 
+	# will automatically scroll to random game every SCREENSAVER_AFTER_DELAY seconds.
 	pygame.time.set_timer(pygame.USEREVENT, 1000)
 	screensaverCounter = 0
 	screensaverActive = True
-	
+
 	muted = False
-	
+
 	# Draw the first game
 	refresh_current_game()
 	pygame.time.wait(100)
-	
+
 	joyPosition = Direction.center
-	
-	# Main loop	
+
+	# Main loop
 	while True:
 		event = pygame.event.wait()
-		
+
 		if event.type == pygame.USEREVENT:
 			# Screensaver, 1 second has gone by without user interaction
 			# so increment counter
@@ -141,13 +143,13 @@ def main():
 			if screensaverActive == False and screensaverCounter >= SCREENSAVER_INITIAL_DELAY:
 				# animate "scroll right" to random game
 				gameIndex = random.randrange(0, gameCount)
-				scroll_right()
+				scroll_right(True)
 				screensaverCounter = 0 # reset screensaver timer
 				screensaverActive = True
 			if screensaverActive == True and screensaverCounter >= SCREENSAVER_AFTER_DELAY:
 				gameIndex = random.randrange(0, gameCount)
-				scroll_right()
-				screensaverCounter = 0 
+				scroll_right(True)
+				screensaverCounter = 0
 		if event.type == pygame.KEYDOWN and (event.key == KEYA or event.key == KEYENTER):
 			# Launch current game (Right Action button)
 			launch_game(muted)
@@ -173,11 +175,12 @@ def main():
 		elif event.type == pygame.KEYDOWN and event.key == KEYLEFT:
 			# scroll left then quick-scroll
 			joyPosition = Direction.left
-			scroll_left()
+			scroll_left(True)
 			# continue polling actively until joystick is released
 			# this will allow quick scrolling after holding direction for 1 sec
 			starttime = pygame.time.get_ticks()
 			scrollstate = False # whether we've started fast-scrolling
+			numpassed = 0 # after INSTANT_SCROLL_DELAY, start instant scroll
 			buttondepressed = True
 			while (buttondepressed):
 				local_event = pygame.event.poll() #clear the event queue
@@ -189,18 +192,20 @@ def main():
 					starttime = pygame.time.get_ticks()
 				# if we're already scrolling, scroll every interval
 				elif scrollstate == True and pygame.time.get_ticks() > starttime + REPEAT_RATE:
-					scroll_left()
+					numpassed = numpassed + 1
+					scroll_left(numpassed < INSTANT_SCROLL_DELAY)
 					starttime = pygame.time.get_ticks()
 			screensaverCounter = 0 # user action, reset timer
 			screensaverActive = False
 		elif event.type == pygame.KEYDOWN and event.key == KEYRIGHT:
 			# Scroll right then quick-scroll
 			joyPosition = Direction.right
-			scroll_right()
+			scroll_right(True)
 			# continue polling actively until joystick is released
 			# this will allow quick scrolling after holding direction for 1 sec
 			starttime = pygame.time.get_ticks()
-			scrollstate = False  # whether we've started fast-scrolling
+			scrollstate = False # whether we've started fast-scrolling
+			numpassed = 0 # after INSTANT_SCROLL_DELAY, start instant scroll
 			buttondepressed = True
 			while (buttondepressed):
 				local_event = pygame.event.poll() #clear the event queue
@@ -212,7 +217,8 @@ def main():
 					starttime = pygame.time.get_ticks()
 				# if we're already scrolling, scroll every interval
 				elif scrollstate == True and pygame.time.get_ticks() > starttime + REPEAT_RATE:
-					scroll_right()
+					numpassed = numpassed + 1
+					scroll_right(numpassed < INSTANT_SCROLL_DELAY)
 					starttime = pygame.time.get_ticks()
 			screensaverCounter = 0 # user action, reset timer
 			screensaverActive = False
@@ -224,37 +230,42 @@ def main():
 
 
 
-def scroll_right():
+def scroll_right(showAnimation):
 	global screen, gameList, gameIndex, gameCount
+	# Skip 2 at a time if animation off (fast)
+	#gameIndex += 1 if showAnimation else 2
 	gameIndex += 1
 	if (gameIndex >= gameCount):
 		gameIndex = 0
 	currentGame=gameList[gameIndex]
 	# slide image in from the right
-	for x in range (int(screen.get_width() * 1.5), int(screen.get_width() * .5), -1 * SCROLLRATE):
-		currentGame.set_centerx(x)
-		render = pygame.sprite.RenderPlain(currentGame)
-		render.update()
-		render.draw(screen)
-		pygame.display.flip()
-		#pygame.time.delay(10)
+	if (showAnimation):
+		for x in range (int(screen.get_width() * 1.5), int(screen.get_width() * .5), -1 * SCROLLRATE):
+			currentGame.set_centerx(x)
+			render = pygame.sprite.RenderPlain(currentGame)
+			render.update()
+			render.draw(screen)
+			pygame.display.flip()
 	refresh_current_game()
 
 
 
-def scroll_left():
+def scroll_left(showAnimation):
 	global screen, gameList, gameIndex, gameCount
+	# Skip 2 at a time if animation off (fast)
+	#gameIndex -= 1 if showAnimation else 2
 	gameIndex -= 1
 	if (gameIndex < 0):
 		gameIndex = gameCount - 1
 	currentGame = gameList[gameIndex]
 	# slide image in from the left
-	for x in range (int(screen.get_width() * -.5), int(screen.get_width() * .5), SCROLLRATE):
-		currentGame.set_centerx(x)
-		render = pygame.sprite.RenderPlain(currentGame)
-		render.update()
-		render.draw(screen)
-		pygame.display.flip()
+	if (showAnimation):
+		for x in range (int(screen.get_width() * -.5), int(screen.get_width() * .5), SCROLLRATE):
+			currentGame.set_centerx(x)
+			render = pygame.sprite.RenderPlain(currentGame)
+			render.update()
+			render.draw(screen)
+			pygame.display.flip()
 	refresh_current_game()
 
 
@@ -311,7 +322,7 @@ def popup_message(message):
 
 def find_roms():
 	global gameList, gameCount
-	
+
 	# parse list of nes roms
 	nesPath='/boot/fceu/rom/'
 	for romFile in glob.glob(nesPath + '*.zip'):
@@ -329,7 +340,7 @@ def find_roms():
 		game = Game("NES", romFile, foundImage, os.path.basename(romFile).upper())
 		gameList.append(game)
 		gameCount+=1
-	
+
 	for romFile in glob.glob(nesPath + '*.nes'):
 		foundImage = ''
 		for imageFile in glob.glob(romFile[:-3].replace('[', '[[]') + "*"):
@@ -342,7 +353,7 @@ def find_roms():
 		game = Game("NES", romFile, foundImage, os.path.basename(romFile).upper())
 		gameList.append(game)
 		gameCount+=1
-	
+
 	# parse list of mame roms
 	mamePath='/boot/advmame/rom/'
 	for romFile in glob.glob(mamePath + '*.zip'):
@@ -357,7 +368,7 @@ def find_roms():
 		game = Game("ARC", romFile, foundImage, os.path.basename(romFile).upper())
 		gameList.append(game)
 		gameCount+=1
-	
+
 	# sort combined list into alphabetical order by rom file name
 	gameList.sort(key=lambda x: x.alpha)
 
@@ -367,20 +378,20 @@ def launch_game(muted):
 	global gameList, gameIndex, screen
 	print "launching " + gameList[gameIndex].rom
 	my_env=dict(os.environ) #make a copy of current environment
-	
+
 	if muted==True:
 		fceuMuteCmd= '-soundvol 0'
 		mameConfig= '/boot/advmame/advmame.rc.landscape.muted'
 	else:
 		fceuMuteCmd='-soundvol 100'
 		mameConfig= '/boot/advmame/advmame.rc.landscape'
-	
+
 	if gameList[gameIndex].emu == 'ARC':
 		mameRawGameName = os.path.basename(gameList[gameIndex].rom)[:-4]
 		command = 'sudo FRAMEBUFFER=/dev/fb1 SDL_FBDEV=/dev/fb1 advmame -cfg ' + mameConfig + ' ' + mameRawGameName
 	elif gameList[gameIndex].emu == 'NES':
 		command = 'sudo FRAMEBUFFER=/dev/fb1 SDL_FBDEV=/dev/fb1 fceu ' + fceuMuteCmd + ' "' + gameList[gameIndex].rom + '"'
-	
+
 	pygame.display.quit()
 	p=subprocess.Popen(command, shell=True, env=my_env)
 	p.wait()
@@ -422,6 +433,3 @@ def show_splash():
 
 if __name__ == "__main__":
 	main()
-
-
-
