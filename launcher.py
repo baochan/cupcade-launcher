@@ -23,6 +23,7 @@ REPEAT_DELAY = 500
 REPEAT_RATE = 75
 # Number of title to fast-scroll before instant-scroll kicks in
 INSTANT_SCROLL_DELAY = 20
+INSTANT_SCROLL_REPEAT_RATE = 20
 
 # Time until screensaver, in seconds
 # Initial delay=after no input from user, will start randomly cycling games
@@ -191,9 +192,12 @@ def main():
 					scrollstate = True
 					starttime = pygame.time.get_ticks()
 				# if we're already scrolling, scroll every interval
-				elif scrollstate == True and pygame.time.get_ticks() > starttime + REPEAT_RATE:
+				elif scrollstate == True and numpassed < INSTANT_SCROLL_DELAY and pygame.time.get_ticks() > starttime + REPEAT_RATE:
 					numpassed = numpassed + 1
-					scroll_left(numpassed < INSTANT_SCROLL_DELAY)
+					scroll_left(True)
+					starttime = pygame.time.get_ticks()
+				elif scrollstate == True and numpassed >= INSTANT_SCROLL_DELAY and pygame.time.get_ticks() > starttime + INSTANT_SCROLL_REPEAT_RATE:
+					scroll_left(False)
 					starttime = pygame.time.get_ticks()
 			screensaverCounter = 0 # user action, reset timer
 			screensaverActive = False
@@ -216,9 +220,12 @@ def main():
 					scrollstate = True
 					starttime = pygame.time.get_ticks()
 				# if we're already scrolling, scroll every interval
-				elif scrollstate == True and pygame.time.get_ticks() > starttime + REPEAT_RATE:
+				elif scrollstate == True and numpassed < INSTANT_SCROLL_DELAY and pygame.time.get_ticks() > starttime + REPEAT_RATE:
 					numpassed = numpassed + 1
-					scroll_right(numpassed < INSTANT_SCROLL_DELAY)
+					scroll_right(True)
+					starttime = pygame.time.get_ticks()
+				elif scrollstate == True and numpassed >= INSTANT_SCROLL_DELAY and pygame.time.get_ticks() > starttime + INSTANT_SCROLL_REPEAT_RATE:
+					scroll_right(False)
 					starttime = pygame.time.get_ticks()
 			screensaverCounter = 0 # user action, reset timer
 			screensaverActive = False
