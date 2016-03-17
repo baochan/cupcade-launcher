@@ -23,7 +23,7 @@ REPEAT_DELAY = 500
 REPEAT_RATE = 75
 # Number of title to fast-scroll before instant-scroll kicks in
 INSTANT_SCROLL_DELAY = 20
-INSTANT_SCROLL_REPEAT_RATE = 20
+INSTANT_SCROLL_REPEAT_RATE = 45
 
 # Time until screensaver, in seconds
 # Initial delay=after no input from user, will start randomly cycling games
