@@ -35,7 +35,7 @@ SCREENSAVER_AFTER_DELAY=10
 # After screensaver shows X images, show an "About" image. 0=disabled
 ABOUT_IMAGE_FREQUENCY = 10
 # Show About image for X seconds
-ABOUT_IMAGE_DELAY = 5
+ABOUT_IMAGE_DELAY = 15
 ABOUTPATH='/home/pi/about-images'
 
 # Colors
@@ -134,7 +134,7 @@ def main():
     pygame.time.set_timer(pygame.USEREVENT, 1000)
     screensaverCounter = 0
     screensaverActive = True
-    screensaverGamesShown = 0
+    screensaverGamesShown = 1
 
     muted = False
 
@@ -398,7 +398,8 @@ def find_about_images():
     global ABOUT_IMAGES
     for imageFile in glob.glob(ABOUTPATH + '/*'):
         if bool(re.match('.*\.(gif|jpe?g|bmp|png)', imageFile, re.I)):
-            ABOUT_IMAGES.append(Game('', '', imageFile, ''))
+            ABOUT_IMAGES.append(Game('', '', imageFile, imageFile))
+    ABOUT_IMAGES.sort(key=lambda x: x.alpha)
 
 
 def launch_game(muted):
